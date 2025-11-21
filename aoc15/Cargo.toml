@@ -1,0 +1,9 @@
+[package]
+name = "aoc15"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+linkme = "0.3.35"
+rayon = "1.11.0"
+md5 = "0.8.0"
