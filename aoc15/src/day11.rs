@@ -1,75 +1,80 @@
 use crate::PUZZLES;
 use crate::format_result;
-
 use linkme::distributed_slice;
 
 const INPUT: &[u8; 8] = b"cqjxjnds";
 
+// Increments password, like "xx" -> "xy", or "xz" -> "ya"
 fn inc_password(password: &mut [u8; 8]) {
-    let mut inc = true;
-
     for ch in password.iter_mut().rev() {
-        if inc {
-            if *ch == b'z' {
-                *ch = b'a';
-                inc = true;
-            } else {
-                *ch += 1;
-                inc = false;
-            }
+        if *ch == b'z' {
+            *ch = b'a';
         } else {
-            break;
+            *ch += 1;
+            return;
         }
     }
 }
-fn check_passwd(password: &[u8; 8]) -> bool {
-    // 1
-    let has_inc = password
+
+// Passwords must include one increasing straight of at least three letters, like `abc`.
+fn has_straight(password: &[u8; 8]) -> bool {
+    password
         .windows(3)
-        .any(|w| w[0] == w[1] - 1 && w[0] == w[2] - 2);
-
-    // 2
-    let has_special = password.iter().any(|ch| matches!(ch, b'i' | b'o' | b'l'));
-
-    // 3
-    let has_2_non_overlapping_pair = password
-        .iter()
-        .fold((0, b'0'), |(cnt, lst_ch), &ch| {
-            if ch == lst_ch {
-                (cnt + 1, b'0')
-            } else {
-                (cnt, ch)
-            }
-        })
-        .0
-        >= 2;
-
-    has_inc && !has_special && has_2_non_overlapping_pair
+        .any(|w| w[0] + 1 == w[1] && w[1] + 1 == w[2])
 }
 
-fn next_password(cur: &[u8; 8]) -> [u8; 8] {
-    let mut password = *cur;
-    while !check_passwd(&password) {
-        inc_password(&mut password);
+// Passwords must contain at least two different, non-overlapping pairs of letters, like `aa`, `bb`, or `zz`.
+fn has_two_pairs(password: &[u8; 8]) -> bool {
+    let mut pairs = 0;
+    let mut i = 0;
+    while i < 7 {
+        if password[i] == password[i + 1] {
+            pairs += 1;
+            i += 2;
+        } else {
+            i += 1;
+        }
     }
+    pairs >= 2
+}
 
-    password
+fn find_next_password(start: &[u8; 8]) -> [u8; 8] {
+    let mut password = *start;
+    loop {
+        inc_password(&mut password);
+
+        // Rule 2: No 'i', 'o', or 'l'.
+        // If found, we can skip many passwords by incrementing the forbidden letter
+        // and resetting the rest.
+        if let Some(pos) = password
+            .iter()
+            .position(|&c| matches!(c, b'i' | b'o' | b'l'))
+        {
+            password[pos] += 1;
+            ((pos + 1)..8).for_each(|j| {
+                password[j] = b'a';
+            });
+            continue; // Re-validate the new jumped-to password
+        }
+
+        // Rules 1 and 3
+        if has_straight(&password) && has_two_pairs(&password) {
+            return password;
+        }
+    }
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let cur = INPUT;
-    let tmp = next_password(cur);
-    let ret = String::from_utf8_lossy(&tmp);
+    let next = find_next_password(INPUT);
+    let ret = String::from_utf8_lossy(&next);
     format_result!(ret);
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let cur = INPUT;
-    let mut tmp0 = next_password(cur);
-    inc_password(&mut tmp0);
-    let tmp1 = next_password(&tmp0);
-    let ret = String::from_utf8_lossy(&tmp1);
+    let first = find_next_password(INPUT);
+    let second = find_next_password(&first);
+    let ret = String::from_utf8_lossy(&second);
     format_result!(ret);
 }
