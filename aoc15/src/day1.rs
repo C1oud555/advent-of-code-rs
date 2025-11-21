@@ -7,9 +7,9 @@ const INPUT: &str = include_str!("../inputs/day1.txt");
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let final_floor = INPUT.chars().fold(0, |acc, ch| match ch {
-        '(' => acc + 1,
-        ')' => acc - 1,
+    let final_floor = INPUT.bytes().fold(0, |acc, ch| match ch {
+        b'(' => acc + 1,
+        b')' => acc - 1,
         _ => acc,
     });
 
@@ -18,21 +18,19 @@ pub fn puzzle0() -> String {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let mut res = 0;
-    let mut floor = 0;
-    for (index, ch) in INPUT.chars().enumerate() {
-        match ch {
-            '(' => floor += 1,
-            ')' => {
-                if floor == 0 {
-                    res = index + 1;
-                    break;
-                }
-                floor -= 1;
-            }
-            _ => {}
-        };
-    }
+    let basement_pos = INPUT
+        .bytes()
+        .scan(0, |floor, b| {
+            *floor += match b {
+                b'(' => 1,
+                b')' => -1,
+                _ => 0,
+            };
+            Some(*floor)
+        })
+        .position(|floor| floor == -1)
+        .map(|p| p + 1)
+        .unwrap_or(0);
 
-    format_result!(res);
+    format_result!(basement_pos);
 }

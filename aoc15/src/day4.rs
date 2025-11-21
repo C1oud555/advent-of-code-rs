@@ -33,8 +33,7 @@ fn find_hash(zeros: usize) -> usize {
     thread::scope(|s| {
         for _ in 0..T_CNT {
             s.spawn(|| {
-                let mut res = index.load(Ordering::Relaxed);
-                index.fetch_add(1, Ordering::Relaxed);
+                let mut res = index.fetch_add(1, Ordering::Relaxed);
 
                 let mut input_buf = Vec::with_capacity(32);
                 while res < THRESHOLD {

@@ -7,11 +7,14 @@ const INPUT: &str = include_str!("../inputs/day2.txt");
 
 fn parse_input() -> impl Iterator<Item = (u32, u32, u32)> {
     INPUT.lines().map(|line| {
-        let nums: Vec<u32> = line
-            .split("x")
-            .map(|num_str| num_str.parse::<u32>().expect("not valid number: {x}"))
-            .collect();
-        (nums[0], nums[1], nums[2])
+        let mut dims = line
+            .split('x')
+            .map(|num_str| num_str.parse::<u32>().unwrap());
+        (
+            dims.next().unwrap(),
+            dims.next().unwrap(),
+            dims.next().unwrap(),
+        )
     })
 }
 

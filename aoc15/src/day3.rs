@@ -7,69 +7,68 @@ use linkme::distributed_slice;
 
 const INPUT: &str = include_str!("../inputs/day3.txt");
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Default)]
 struct Coord {
     x: i32,
     y: i32,
 }
 
-fn record_present_num0() -> HashSet<Coord> {
-    let mut visited_houses = HashSet::new();
-    let mut current_pos = Coord { x: 0, y: 0 };
-
-    visited_houses.insert(current_pos);
-
-    for ch in INPUT.chars() {
-        match ch {
-            '^' => current_pos.y += 1,
-            'v' => current_pos.y -= 1,
-            '>' => current_pos.x += 1,
-            '<' => current_pos.x -= 1,
+impl Coord {
+    fn move_by(&mut self, instruction: u8) {
+        match instruction {
+            b'^' => self.y += 1,
+            b'v' => self.y -= 1,
+            b'>' => self.x += 1,
+            b'<' => self.x -= 1,
             _ => {}
         }
-        visited_houses.insert(current_pos);
     }
+}
 
-    visited_houses
+fn record_present_num0() -> usize {
+    std::iter::once(Coord::default())
+        .chain(INPUT.bytes().scan(Coord::default(), |pos, instruction| {
+            pos.move_by(instruction);
+            Some(*pos)
+        }))
+        .collect::<HashSet<_>>()
+        .len()
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let num = record_present_num0().len();
-    format_result!(num);
+    format_result!(record_present_num0());
 }
 
-fn record_present_num1() -> HashSet<Coord> {
+fn record_present_num1() -> usize {
     let mut visited_houses = HashSet::new();
-    let mut santa_pos = Coord { x: 0, y: 0 };
-    let mut robot_pos = Coord { x: 0, y: 0 };
+    visited_houses.insert(Coord::default()); // Starting house
 
-    visited_houses.insert(santa_pos);
+    // Santa's moves
+    let santa_path = INPUT
+        .bytes()
+        .step_by(2)
+        .scan(Coord::default(), |pos, instruction| {
+            pos.move_by(instruction);
+            Some(*pos)
+        });
+    visited_houses.extend(santa_path);
 
-    for (i, ch) in INPUT.chars().enumerate() {
-        let current_pos = if i % 2 == 0 {
-            // Santa's turn
-            &mut santa_pos
-        } else {
-            // Robo-Santa's turn
-            &mut robot_pos
-        };
+    // Robo-Santa's moves
+    let robot_path = INPUT
+        .bytes()
+        .skip(1)
+        .step_by(2)
+        .scan(Coord::default(), |pos, instruction| {
+            pos.move_by(instruction);
+            Some(*pos)
+        });
+    visited_houses.extend(robot_path);
 
-        match ch {
-            '^' => current_pos.y += 1,
-            'v' => current_pos.y -= 1,
-            '>' => current_pos.x += 1,
-            '<' => current_pos.x -= 1,
-            _ => {}
-        }
-        visited_houses.insert(*current_pos);
-    }
-
-    visited_houses
+    visited_houses.len()
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let num = record_present_num1().len();
-    format_result!(num);
+    format_result!(record_present_num1());
 }

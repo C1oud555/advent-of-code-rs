@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::PUZZLES;
 use crate::format_result;
 
@@ -5,14 +7,20 @@ use linkme::distributed_slice;
 
 const INPUT: &str = include_str!("../inputs/day5.txt");
 
-// 1. check vowels
-// 2. check two character
-// 3. check no `ab` `cd` `pq` `xy` inside
-fn check_good(input: &str) -> bool {
-    let has_three_vowels = input.chars().filter(|&c| "aeiou".contains(c)).count() >= 3;
-    let has_double_letter = input.as_bytes().windows(2).any(|w| w[0] == w[1]);
-    let has_naughty_strings = input
-        .as_bytes()
+fn is_nice_part1(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    // It contains at least three vowels (aeiou only).
+    let has_three_vowels = s
+        .chars()
+        .filter(|&c| matches!(c, 'a' | 'e' | 'i' | 'o' | 'u'))
+        .count()
+        >= 3;
+
+    // It contains at least one letter that appears twice in a row.
+    let has_double_letter = bytes.windows(2).any(|w| w[0] == w[1]);
+
+    // It does not contain the strings ab, cd, pq, or xy.
+    let has_naughty_strings = bytes
         .windows(2)
         .any(|w| matches!(w, b"ab" | b"cd" | b"pq" | b"xy"));
 
@@ -21,35 +29,38 @@ fn check_good(input: &str) -> bool {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let mut count = 0;
-    for line in INPUT.lines() {
-        if check_good(line) {
-            count += 1;
-        }
-    }
-
+    let count = INPUT.lines().filter(|line| is_nice_part1(line)).count();
     format_result!(count);
 }
 
-// 1. check aaxxxxxaa
-// 2. check xyx
-fn check_good1(input: &str) -> bool {
-    let has_sandwich = input.as_bytes().windows(3).any(|w| w[0] == w[2]);
+fn has_non_overlapping_pair(s: &[u8]) -> bool {
+    let mut seen_pairs = HashMap::<[u8; 2], usize>::with_capacity(s.len());
+    for i in 0..s.len() - 1 {
+        let pair: [u8; 2] = [s[i], s[i + 1]];
+        if let Some(first_index) = seen_pairs.get(&pair) {
+            if i > *first_index + 1 {
+                return true;
+            }
+        } else {
+            seen_pairs.insert(pair, i);
+        }
+    }
+    false
+}
 
-    let has_non_overlapping_pair =
-        (0..input.len().saturating_sub(3)).any(|i| input[i + 2..].contains(&input[i..i + 2]));
+fn is_nice_part2(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    // It contains a pair of any two letters that appears at least twice in the string without overlapping.
+    let has_pair = has_non_overlapping_pair(bytes);
 
-    has_sandwich && has_non_overlapping_pair
+    // It contains at least one letter which repeats with exactly one letter between them.
+    let has_sandwich = bytes.windows(3).any(|w| w[0] == w[2]);
+
+    has_pair && has_sandwich
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let mut count = 0;
-    for line in INPUT.lines() {
-        if check_good1(line) {
-            count += 1;
-        }
-    }
-
+    let count = INPUT.lines().filter(|line| is_nice_part2(line)).count();
     format_result!(count);
 }
