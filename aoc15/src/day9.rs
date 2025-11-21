@@ -39,7 +39,7 @@ fn get_distance(from: &str, to: &str, routes: &Vec<(&str, &str, usize)>) -> usiz
     routes
         .iter()
         .find_map(|x| {
-            if x.0 == from && x.1 == to {
+            if (x.0 == from && x.1 == to) || (x.0 == to && x.1 == from) {
                 Some(x.2)
             } else {
                 None
@@ -53,19 +53,14 @@ fn find_min_path(
     rest_places: HashSet<&str>,
     routes: &Vec<(&str, &str, usize)>,
 ) -> usize {
-    if rest_places.is_empty() {
-        return 0;
-    }
+    let mut rest_places = rest_places.clone();
+    rest_places.remove(from);
 
     rest_places
         .iter()
-        .map(|to| {
-            let mut rest_places = rest_places.clone();
-            rest_places.remove(from);
-            get_distance(from, to, routes) + find_min_path(to, rest_places, routes)
-        })
+        .map(|to| get_distance(from, to, routes) + find_min_path(to, rest_places.clone(), routes))
         .min()
-        .unwrap()
+        .unwrap_or(0)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -93,7 +88,42 @@ pub fn puzzle0() -> String {
     format_result!(ret);
 }
 
+fn find_max_path(
+    from: &str,
+    rest_places: HashSet<&str>,
+    routes: &Vec<(&str, &str, usize)>,
+) -> usize {
+    let mut rest_places = rest_places.clone();
+    rest_places.remove(from);
+
+    rest_places
+        .iter()
+        .map(|to| get_distance(from, to, routes) + find_max_path(to, rest_places.clone(), routes))
+        .max()
+        .unwrap_or(0)
+}
+
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!("template 1");
+    // TODO: opt with djskara algorithm
+    let inputs = parse_input(INPUT);
+
+    let mut places = HashSet::new();
+    for route in &inputs {
+        let (from, to, _) = route;
+        places.insert(*from);
+        places.insert(*to);
+    }
+
+    let ret = places
+        .par_iter()
+        .map(|house| {
+            let mut rest_places = places.clone();
+            rest_places.remove(house);
+            find_max_path(house, rest_places, &inputs)
+        })
+        .max()
+        .unwrap();
+
+    format_result!(ret);
 }
