@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::PUZZLES;
 use crate::format_result;
 
@@ -8,9 +6,10 @@ use nom::{
     IResult, Parser,
     bytes::complete::tag,
     character::complete::{alpha1, isize as nom_isize, line_ending},
-    combinator::{map, map_res},
-    multi::many1,
+    combinator::map,
+    multi::separated_list1,
 };
+use std::sync::OnceLock;
 
 const INPUT: &str = include_str!("../inputs/day15.txt");
 
@@ -49,120 +48,80 @@ fn parse_line(i: &str) -> IResult<&str, Ingredient> {
     .parse(i)
 }
 
-fn parse_many(i: &str) -> Vec<Ingredient> {
-    many1(map_res((parse_line, line_ending), |(route, _)| {
-        Ok::<_, nom::error::Error<&str>>(route)
-    }))
-    .parse(i)
-    .unwrap()
-    .1
+fn parse_ingredients(i: &str) -> Vec<Ingredient> {
+    separated_list1(line_ending, parse_line).parse(i).unwrap().1
 }
 
-fn scores(choosed: &HashMap<Ingredient, isize>) -> isize {
-    let (c, d, f, t) = choosed.iter().fold((0, 0, 0, 0), |(c, d, f, t), (i, cnt)| {
-        (
-            c + cnt * i.capacity,
-            d + cnt * i.durability,
-            f + cnt * i.flavor,
-            t + cnt * i.texture,
-        )
-    });
-    println!(
-        "{c} {d} {f} {t} : {}",
-        c.max(0) * d.max(0) * f.max(0) * t.max(0)
-    );
-    c.max(0) * d.max(0) * f.max(0) * t.max(0)
-}
+fn solve() -> (isize, isize) {
+    let ingredients = parse_ingredients(INPUT);
+    let mut max_score_part1 = 0;
+    let mut max_score_part2 = 0;
 
-fn fake_scores(choosed: &HashMap<Ingredient, isize>) -> isize {
-    let (c, d, f, t) = choosed.iter().fold((0, 0, 0, 0), |(c, d, f, t), (i, cnt)| {
-        (
-            c + cnt * i.capacity,
-            d + cnt * i.durability,
-            f + cnt * i.flavor,
-            t + cnt * i.texture,
-        )
-    });
-    println!(
-        "{c} {d} {f} {t} {}",
-        c.max(1) * d.max(1) * f.max(1) * t.max(1)
-    );
-    c.max(1) * d.max(1) * f.max(1) * t.max(1)
-}
-
-fn find_max(
-    iter_time: usize,
-    avai: &[Ingredient],
-    choosed: &mut HashMap<Ingredient, isize>,
-) -> isize {
-    for _ in 0..iter_time {
-        let max_ingre = avai
-            .iter()
-            .map(|ingre| {
-                let mut tmp = choosed.clone();
-                tmp.entry(*ingre).and_modify(|v| *v += 1).or_insert(1);
-                let ret = fake_scores(&tmp);
-                (ingre, ret)
-            })
-            .max_by(|l, r| l.1.cmp(&r.1))
-            .unwrap();
-        choosed
-            .entry(*max_ingre.0)
-            .and_modify(|v| *v += 1)
-            .or_insert(1);
+    if ingredients.len() != 4 {
+        // This solution is hardcoded for 4 ingredients.
+        // A generic solution would require recursion or dynamic programming.
+        // For Advent of Code, this is a common and acceptable optimization.
+        panic!("This solution expects exactly 4 ingredients.");
     }
 
-    scores(choosed)
-}
+    for i in 0..=100 {
+        for j in 0..=(100 - i) {
+            for k in 0..=(100 - i - j) {
+                let l = 100 - i - j - k;
 
-#[distributed_slice(PUZZLES)]
-pub fn puzzle0() -> String {
-    let avai = parse_many(INPUT);
-    let mut choosed = HashMap::new();
+                let capacity = (ingredients[0].capacity * i
+                    + ingredients[1].capacity * j
+                    + ingredients[2].capacity * k
+                    + ingredients[3].capacity * l)
+                    .max(0);
+                let durability = (ingredients[0].durability * i
+                    + ingredients[1].durability * j
+                    + ingredients[2].durability * k
+                    + ingredients[3].durability * l)
+                    .max(0);
+                let flavor = (ingredients[0].flavor * i
+                    + ingredients[1].flavor * j
+                    + ingredients[2].flavor * k
+                    + ingredients[3].flavor * l)
+                    .max(0);
+                let texture = (ingredients[0].texture * i
+                    + ingredients[1].texture * j
+                    + ingredients[2].texture * k
+                    + ingredients[3].texture * l)
+                    .max(0);
 
-    let ret = find_max(100, &avai, &mut choosed);
+                let score = capacity * durability * flavor * texture;
+                max_score_part1 = max_score_part1.max(score);
 
-    format_result!(ret);
-}
-fn find_max_withconstrait(avai: &[Ingredient], choosed: &mut HashMap<Ingredient, isize>) -> isize {
-    let avai8: Vec<Ingredient> = avai.iter().filter(|x| x.calories == 8).copied().collect();
-    let avai3: Vec<Ingredient> = avai.iter().filter(|x| x.calories == 3).copied().collect();
-    let a80 = avai8[0];
-    let a81 = avai8[1];
-    let a30 = avai3[0];
-    let a31 = avai3[1];
-    choosed.insert(a80, 0);
-    choosed.insert(a81, 0);
-    choosed.insert(a30, 0);
-    choosed.insert(a31, 0);
-    let mut score = 0;
-    for c80_cnt in 0..40 {
-        let c81_cnt = 40 - c80_cnt;
-        for c30_cnt in 0..60 {
-            let c31_cnt = 60 - c30_cnt;
-            choosed.entry(a80).and_modify(|x| *x = c80_cnt);
-            choosed.entry(a81).and_modify(|x| *x = c81_cnt);
-            choosed.entry(a30).and_modify(|x| *x = c30_cnt);
-            choosed.entry(a31).and_modify(|x| *x = c31_cnt);
+                let calories = ingredients[0].calories * i
+                    + ingredients[1].calories * j
+                    + ingredients[2].calories * k
+                    + ingredients[3].calories * l;
 
-            if scores(choosed) > score {
-                score = scores(choosed);
+                if calories == 500 {
+                    max_score_part2 = max_score_part2.max(score);
+                }
             }
         }
     }
 
-    score
+    (max_score_part1, max_score_part2)
+}
+
+static RESULTS: OnceLock<(isize, isize)> = OnceLock::new();
+
+fn get_results() -> (isize, isize) {
+    *RESULTS.get_or_init(solve)
+}
+
+#[distributed_slice(PUZZLES)]
+pub fn puzzle0() -> String {
+    let result = get_results().0;
+    format_result!(result);
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let avai = parse_many(INPUT);
-    let mut choosed = HashMap::new();
-    let ret = find_max_withconstrait(&avai, &mut choosed);
-
-    let total_calories: isize = choosed.iter().map(|(k, cnt)| k.calories * cnt).sum();
-
-    println!("total calories: {}", total_calories);
-
-    format_result!(ret);
+    let result = get_results().1;
+    format_result!(result);
 }
