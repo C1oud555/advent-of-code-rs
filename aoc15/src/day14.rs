@@ -2,14 +2,12 @@ use crate::PUZZLES;
 use crate::format_result;
 
 use linkme::distributed_slice;
-use nom::character::complete::line_ending;
-use nom::combinator::map_res;
-use nom::multi::many1;
 use nom::{
     IResult, Parser,
     bytes::complete::tag,
-    character::complete::{alpha1, usize as nom_usize},
-    combinator::map,
+    character::complete::{alpha1, line_ending, usize as nom_usize},
+    combinator::{map, map_res},
+    multi::many1,
 };
 
 const INPUT: &str = include_str!("../inputs/day14.txt");
