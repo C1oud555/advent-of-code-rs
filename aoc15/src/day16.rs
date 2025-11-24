@@ -1,17 +1,28 @@
 use crate::PUZZLES;
 use crate::format_result;
-
 use linkme::distributed_slice;
-use nom::{
-    IResult, Parser,
-    bytes::complete::tag,
-    character::complete::{alpha1, line_ending, usize as nom_usize},
-    combinator::map,
-    multi::separated_list1,
-};
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 const INPUT: &str = include_str!("../inputs/day16.txt");
 
+static TICKER_TAPE: Lazy<HashMap<Compound, usize>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert(Compound::Children, 3);
+    m.insert(Compound::Cats, 7);
+    m.insert(Compound::Samoyeds, 2);
+    m.insert(Compound::Pomeranians, 3);
+    m.insert(Compound::Akitas, 0);
+    m.insert(Compound::Vizslas, 0);
+    m.insert(Compound::Goldfish, 5);
+    m.insert(Compound::Trees, 3);
+    m.insert(Compound::Cars, 2);
+    m.insert(Compound::Perfumes, 1);
+    m
+});
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 enum Compound {
     Children,
     Cats,
@@ -25,128 +36,90 @@ enum Compound {
     Perfumes,
 }
 
-struct Record {
-    tag: Compound,
-    cnt: usize,
-}
+impl FromStr for Compound {
+    type Err = ();
 
-struct Aunt {
-    which: usize,
-    records: Vec<Record>,
-}
-
-fn str_to_compound(i: &str) -> Compound {
-    match i {
-        "children" => Compound::Children,
-        "cats" => Compound::Cats,
-        "samoyeds" => Compound::Samoyeds,
-        "pomeranians" => Compound::Pomeranians,
-        "akitas" => Compound::Akitas,
-        "vizslas" => Compound::Vizslas,
-        "goldfish" => Compound::Goldfish,
-        "trees" => Compound::Trees,
-        "cars" => Compound::Cars,
-        "perfumes" => Compound::Perfumes,
-        _ => panic!("not valid compound"),
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "children" => Ok(Compound::Children),
+            "cats" => Ok(Compound::Cats),
+            "samoyeds" => Ok(Compound::Samoyeds),
+            "pomeranians" => Ok(Compound::Pomeranians),
+            "akitas" => Ok(Compound::Akitas),
+            "vizslas" => Ok(Compound::Vizslas),
+            "goldfish" => Ok(Compound::Goldfish),
+            "trees" => Ok(Compound::Trees),
+            "cars" => Ok(Compound::Cars),
+            "perfumes" => Ok(Compound::Perfumes),
+            _ => Err(()),
+        }
     }
 }
 
-fn parse_line(i: &str) -> IResult<&str, Aunt> {
-    map(
-        (
-            tag("Sue "),
-            nom_usize,
-            tag(": "),
-            alpha1,
-            tag(": "),
-            nom_usize,
-            tag(", "),
-            alpha1,
-            tag(": "),
-            nom_usize,
-            tag(", "),
-            alpha1,
-            tag(": "),
-            nom_usize,
-        ),
-        |(_, which, _, cp0, _, cnt0, _, cp1, _, cnt1, _, cp2, _, cnt2)| {
-            let records = vec![
-                Record {
-                    tag: str_to_compound(cp0),
-                    cnt: cnt0,
-                },
-                Record {
-                    tag: str_to_compound(cp1),
-                    cnt: cnt1,
-                },
-                Record {
-                    tag: str_to_compound(cp2),
-                    cnt: cnt2,
-                },
-            ];
-
-            Aunt { which, records }
-        },
-    )
-    .parse(i)
+#[derive(Debug)]
+struct Aunt {
+    id: usize,
+    properties: HashMap<Compound, usize>,
 }
 
-fn parse_aunts(i: &str) -> Vec<Aunt> {
-    separated_list1(line_ending, parse_line).parse(i).unwrap().1
+fn parse_aunts(input: &str) -> Vec<Aunt> {
+    input
+        .lines()
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.splitn(2, ": ").collect();
+            let id = parts[0].replace("Sue ", "").parse().ok()?;
+            let mut properties = HashMap::new();
+
+            let props_str = parts[1];
+            let props_parts: Vec<&str> = props_str.split(", ").collect();
+
+            for part in props_parts {
+                let prop_val: Vec<&str> = part.split(": ").collect();
+                if let (Ok(compound), Ok(value)) = (prop_val[0].parse(), prop_val[1].parse()) {
+                    properties.insert(compound, value);
+                }
+            }
+            Some(Aunt { id, properties })
+        })
+        .collect()
+}
+
+fn solve<F>(aunts: &[Aunt], predicate: F) -> usize
+where
+    F: Fn(&Compound, &usize, &usize) -> bool,
+{
+    aunts
+        .iter()
+        .find(|aunt| {
+            TICKER_TAPE.iter().all(|(compound, &ticker_value)| {
+                aunt.properties
+                    .get(compound)
+                    .is_none_or(|&aunt_value| predicate(compound, &aunt_value, &ticker_value))
+            })
+        })
+        .unwrap()
+        .id
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let aunts = parse_aunts(INPUT);
-    let ret = aunts
-        .iter()
-        .find(|aunt| {
-            for record in &aunt.records {
-                match record.tag {
-                    Compound::Children if record.cnt != 3 => return false,
-                    Compound::Cats if record.cnt != 7 => return false,
-                    Compound::Samoyeds if record.cnt != 2 => return false,
-                    Compound::Pomeranians if record.cnt != 3 => return false,
-                    Compound::Akitas if record.cnt != 0 => return false,
-                    Compound::Vizslas if record.cnt != 0 => return false,
-                    Compound::Goldfish if record.cnt != 5 => return false,
-                    Compound::Trees if record.cnt != 3 => return false,
-                    Compound::Cars if record.cnt != 2 => return false,
-                    Compound::Perfumes if record.cnt != 1 => return false,
-                    _ => {}
-                }
-            }
-            true
-        })
-        .expect("Not found satified aunt")
-        .which;
-    format_result!(ret);
+    let result = solve(&aunts, |_compound, &aunt_value, &ticker_value| {
+        aunt_value == ticker_value
+    });
+    format_result!(result);
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
     let aunts = parse_aunts(INPUT);
-    let ret = aunts
-        .iter()
-        .find(|aunt| {
-            for record in &aunt.records {
-                match record.tag {
-                    Compound::Children if record.cnt != 3 => return false,
-                    Compound::Cats if record.cnt <= 7 => return false,
-                    Compound::Samoyeds if record.cnt != 2 => return false,
-                    Compound::Pomeranians if record.cnt >= 3 => return false,
-                    Compound::Akitas if record.cnt != 0 => return false,
-                    Compound::Vizslas if record.cnt != 0 => return false,
-                    Compound::Goldfish if record.cnt >= 5 => return false,
-                    Compound::Trees if record.cnt <= 3 => return false,
-                    Compound::Cars if record.cnt != 2 => return false,
-                    Compound::Perfumes if record.cnt != 1 => return false,
-                    _ => {}
-                }
-            }
-            true
-        })
-        .expect("Not found satified aunt")
-        .which;
-    format_result!(ret);
+    let result = solve(
+        &aunts,
+        |compound, &aunt_value, &ticker_value| match compound {
+            Compound::Cats | Compound::Trees => aunt_value > ticker_value,
+            Compound::Pomeranians | Compound::Goldfish => aunt_value < ticker_value,
+            _ => aunt_value == ticker_value,
+        },
+    );
+    format_result!(result);
 }
