@@ -28,7 +28,7 @@ pub fn calc_area(shape: &(u32, u32, u32)) -> u32 {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let all_area = parse_input().map(|shape| calc_area(&shape)).sum::<u32>();
-    format_result!(all_area);
+    format_result!(all_area)
 }
 
 pub fn calc_ribbon(shape: &(u32, u32, u32)) -> u32 {
@@ -42,5 +42,5 @@ pub fn calc_ribbon(shape: &(u32, u32, u32)) -> u32 {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
     let all_ribbon = parse_input().map(|shape| calc_ribbon(&shape)).sum::<u32>();
-    format_result!(all_ribbon);
+    format_result!(all_ribbon)
 }

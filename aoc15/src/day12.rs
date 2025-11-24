@@ -27,10 +27,10 @@ fn solve(ignore_red: bool) -> i64 {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    format_result!(solve(false));
+    format_result!(solve(false))
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!(solve(true));
+    format_result!(solve(true))
 }

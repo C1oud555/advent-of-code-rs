@@ -38,10 +38,10 @@ fn solve(iterations: usize) -> usize {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    format_result!(solve(40));
+    format_result!(solve(40))
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!(solve(50));
+    format_result!(solve(50))
 }

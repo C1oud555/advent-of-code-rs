@@ -30,7 +30,7 @@ fn is_nice_part1(s: &str) -> bool {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let count = INPUT.lines().filter(|line| is_nice_part1(line)).count();
-    format_result!(count);
+    format_result!(count)
 }
 
 fn has_non_overlapping_pair(s: &[u8]) -> bool {
@@ -62,5 +62,5 @@ fn is_nice_part2(s: &str) -> bool {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
     let count = INPUT.lines().filter(|line| is_nice_part2(line)).count();
-    format_result!(count);
+    format_result!(count)
 }

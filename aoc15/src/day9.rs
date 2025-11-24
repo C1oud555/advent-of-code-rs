@@ -166,7 +166,7 @@ pub fn puzzle0() -> String {
         .min()
         .unwrap(); // Unwrap because there's always at least one path
 
-    format_result!(min_total_distance);
+    format_result!(min_total_distance)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -183,5 +183,5 @@ pub fn puzzle1() -> String {
         .max()
         .unwrap(); // Unwrap because there's always at least one path
 
-    format_result!(max_total_distance);
+    format_result!(max_total_distance)
 }

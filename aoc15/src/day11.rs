@@ -68,7 +68,7 @@ fn find_next_password(start: &[u8; 8]) -> [u8; 8] {
 pub fn puzzle0() -> String {
     let next = find_next_password(INPUT);
     let ret = String::from_utf8_lossy(&next);
-    format_result!(ret);
+    format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -76,5 +76,5 @@ pub fn puzzle1() -> String {
     let first = find_next_password(INPUT);
     let second = find_next_password(&first);
     let ret = String::from_utf8_lossy(&second);
-    format_result!(ret);
+    format_result!(ret)
 }

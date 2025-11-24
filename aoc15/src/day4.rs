@@ -62,10 +62,10 @@ fn find_hash(zeros: usize) -> usize {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    format_result!(find_hash(5));
+    format_result!(find_hash(5))
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!(find_hash(6));
+    format_result!(find_hash(6))
 }

@@ -53,7 +53,7 @@ pub fn puzzle0() -> String {
     // The puzzle asks for the sum of all literal lengths minus the sum of all memory lengths.
     // This is equivalent to summing the overhead for each line.
     let total_overhead: usize = INPUT.lines().map(decoded_overhead).sum();
-    format_result!(total_overhead);
+    format_result!(total_overhead)
 }
 
 /// Calculates the number of extra characters needed to re-encode a string literal.
@@ -74,5 +74,5 @@ pub fn puzzle1() -> String {
     // total length of all original string literals.
     // This is equivalent to summing the encoding overhead for each line.
     let total_overhead: usize = INPUT.lines().map(encoded_overhead).sum();
-    format_result!(total_overhead);
+    format_result!(total_overhead)
 }

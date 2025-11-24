@@ -338,7 +338,7 @@ pub fn puzzle0() -> String {
     let a_wire_id = wires_map["a"];
 
     let output = evaluator.eval(a_wire_id);
-    format_result!(output);
+    format_result!(output)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -356,5 +356,5 @@ pub fn puzzle1() -> String {
     evaluator.signals[b_wire_id as usize] = Some(a_val);
 
     let output = evaluator.eval(a_wire_id);
-    format_result!(output);
+    format_result!(output)
 }

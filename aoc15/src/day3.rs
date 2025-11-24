@@ -37,7 +37,7 @@ fn record_present_num0() -> usize {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    format_result!(record_present_num0());
+    format_result!(record_present_num0())
 }
 
 fn record_present_num1() -> usize {
@@ -70,5 +70,5 @@ fn record_present_num1() -> usize {
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!(record_present_num1());
+    format_result!(record_present_num1())
 }

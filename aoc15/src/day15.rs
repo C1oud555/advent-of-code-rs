@@ -117,11 +117,11 @@ fn get_results() -> (isize, isize) {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let result = get_results().0;
-    format_result!(result);
+    format_result!(result)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
     let result = get_results().1;
-    format_result!(result);
+    format_result!(result)
 }

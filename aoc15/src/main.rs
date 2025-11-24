@@ -28,7 +28,7 @@ pub static PUZZLES: [fn() -> String];
 
 #[macro_export]
 macro_rules! format_result {
-    ($x:expr) => {
+    ($x:expr) => {{
         let mod_name = module_path!().split("::").last().unwrap_or("");
         fn f() {}
         fn type_name_of<T>(_: T) -> &'static str {
@@ -41,8 +41,8 @@ macro_rules! format_result {
             .last()
             .unwrap_or("unknown");
         let res = $x;
-        return format!("Result of {mod_name:>5}::{func_name:<10} is {res}");
-    };
+        format!("Result of {mod_name:>5}::{func_name:<10} is {res}")
+    }};
 }
 
 fn main() {

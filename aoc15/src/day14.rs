@@ -64,7 +64,7 @@ pub fn puzzle0() -> String {
         .map(|deer| calc_distance(deer, seconds))
         .max()
         .unwrap();
-    format_result!(ret);
+    format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -88,5 +88,5 @@ pub fn puzzle1() -> String {
 
     let ret = starts.iter().max().unwrap();
 
-    format_result!(ret);
+    format_result!(ret)
 }

@@ -110,11 +110,11 @@ fn solve(add_self: bool) -> isize {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let result = solve(false);
-    format_result!(result);
+    format_result!(result)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
     let result = solve(true);
-    format_result!(result);
+    format_result!(result)
 }

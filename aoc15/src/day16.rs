@@ -107,7 +107,7 @@ pub fn puzzle0() -> String {
     let result = solve(&aunts, |_compound, &aunt_value, &ticker_value| {
         aunt_value == ticker_value
     });
-    format_result!(result);
+    format_result!(result)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -121,5 +121,5 @@ pub fn puzzle1() -> String {
             _ => aunt_value == ticker_value,
         },
     );
-    format_result!(result);
+    format_result!(result)
 }

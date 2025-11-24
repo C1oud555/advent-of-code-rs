@@ -73,7 +73,7 @@ pub fn puzzle0() -> String {
     let mut containers = parse_containers();
     let target = 150;
     let (ret, _) = solve_optimized(&mut containers, target);
-    format_result!(ret);
+    format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -81,5 +81,5 @@ pub fn puzzle1() -> String {
     let mut containers = parse_containers();
     let target = 150;
     let (_, ret) = solve_optimized(&mut containers, target);
-    format_result!(ret);
+    format_result!(ret)
 }

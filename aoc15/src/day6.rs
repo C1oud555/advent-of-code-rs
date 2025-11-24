@@ -76,7 +76,7 @@ pub fn puzzle0() -> String {
         }
     }
     let lit_count = board.iter().filter(|&&v| v).count();
-    format_result!(lit_count);
+    format_result!(lit_count)
 }
 
 // --- Part 2 ---
@@ -104,5 +104,5 @@ pub fn puzzle1() -> String {
     }
 
     let total_brightness: u64 = board.iter().map(|&v| v as u64).sum();
-    format_result!(total_brightness);
+    format_result!(total_brightness)
 }

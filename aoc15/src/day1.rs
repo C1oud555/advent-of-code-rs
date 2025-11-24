@@ -13,7 +13,7 @@ pub fn puzzle0() -> String {
         _ => acc,
     });
 
-    format_result!(final_floor);
+    format_result!(final_floor)
 }
 
 #[distributed_slice(PUZZLES)]
@@ -32,5 +32,5 @@ pub fn puzzle1() -> String {
         .map(|p| p + 1)
         .unwrap_or(0);
 
-    format_result!(basement_pos);
+    format_result!(basement_pos)
 }

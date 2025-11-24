@@ -124,11 +124,11 @@ fn run_simulation(steps: usize, corners_on: bool) -> usize {
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let ret = run_simulation(100, false);
-    format_result!(ret);
+    format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
     let ret = run_simulation(100, true);
-    format_result!(ret);
+    format_result!(ret)
 }
