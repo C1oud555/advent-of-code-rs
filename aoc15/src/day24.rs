@@ -12,73 +12,125 @@ fn parse_input() -> Vec<usize> {
         .collect()
 }
 
-fn solve0(
-    start: usize,
-    choices: &[usize],
-    target: usize,
-    selected: &[usize],
-    solutions: &mut Vec<Vec<usize>>,
-) {
-    for i in start..choices.len() {
-        let choice = choices[i];
-        let min_len = solutions.iter().map(|x| x.len()).min().unwrap_or(100);
-        if selected.len() > min_len {
-            return;
-        }
+struct CurrentState {
+    sum: usize,
+    qe: usize,
+    len: usize,
+}
 
-        if choice > target {
-            continue;
-        }
-        let mut tmp = selected.to_owned();
-        tmp.push(choice);
-        if choice == target {
-            solutions.push(tmp);
-        } else {
-            solve0(i + 1, choices, target - choice, &tmp, solutions);
-        }
+struct ProblemConfig<'a> {
+    packages: &'a [usize],
+    target_sum: usize,
+}
+
+struct BestSolution {
+    len: usize,
+    qe: usize,
+}
+
+fn find_best_group(
+    index: usize,
+    current: CurrentState,
+    config: &ProblemConfig,
+    best: &mut BestSolution,
+) {
+    // Aggressive pruning: if current length already matches or exceeds the best found so far,
+    // or if current sum exceeds target, this path cannot be better.
+    if current.len >= best.len && current.sum != config.target_sum {
+        return;
     }
+    if current.sum > config.target_sum {
+        return;
+    }
+
+    // Base case: if target sum is reached
+    if current.sum == config.target_sum {
+        if current.len < best.len {
+            // New best length found
+            best.len = current.len;
+            best.qe = current.qe;
+        } else if current.len == best.len && current.qe < best.qe {
+            // Same best length, but better quantum entanglement
+            best.qe = current.qe;
+        }
+        return; // Found a valid group, no need to add more packages to this group
+    }
+
+    // Base case: if all packages have been considered
+    if index == config.packages.len() {
+        return;
+    }
+
+    // Recursive step 1: Include the current package
+    let package = config.packages[index];
+    find_best_group(
+        index + 1,
+        CurrentState {
+            sum: current.sum + package,
+            qe: current.qe * package,
+            len: current.len + 1,
+        },
+        config,
+        best,
+    );
+
+    // Recursive step 2: Exclude the current package
+    find_best_group(
+        index + 1,
+        current, // Pass the current state without modification
+        config,
+        best,
+    );
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let mut input = parse_input();
-    input.sort();
-    input.reverse();
-    let i_sum: usize = input.iter().sum();
-    let target = i_sum / 3;
+    let mut packages = parse_input();
+    packages.sort_unstable_by(|a, b| b.cmp(a)); // Sort descending for better pruning
+    let total_sum: usize = packages.iter().sum();
+    let target_sum = total_sum / 3;
 
-    let mut solutions = vec![];
-    solve0(0, &input, target, &[], &mut solutions);
-    let min_len = solutions.iter().map(|x| x.len()).min().unwrap();
-    solutions.retain(|x| x.len() == min_len);
+    let config = ProblemConfig {
+        packages: &packages,
+        target_sum,
+    };
+    let mut best = BestSolution {
+        len: usize::MAX,
+        qe: usize::MAX,
+    };
+    let initial_state = CurrentState {
+        sum: 0,
+        qe: 1,
+        len: 0,
+    };
 
-    let ret = solutions
-        .iter()
-        .map(|x| x.iter().product::<usize>())
-        .min()
-        .unwrap();
+    find_best_group(0, initial_state, &config, &mut best);
 
-    format_result!(ret)
+    format_result!(best.qe)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let mut input = parse_input();
-    input.sort();
-    input.reverse();
-    let i_sum: usize = input.iter().sum();
-    let target = i_sum / 4;
+    let mut packages = parse_input();
+    packages.sort_unstable_by(|a, b| b.cmp(a)); // Sort descending for better pruning
+    let total_sum: usize = packages.iter().sum();
+    let target_sum = total_sum / 4;
 
-    let mut solutions = vec![];
-    solve0(0, &input, target, &[], &mut solutions);
-    let min_len = solutions.iter().map(|x| x.len()).min().unwrap();
-    solutions.retain(|x| x.len() == min_len);
+    let config = ProblemConfig {
+        packages: &packages,
+        target_sum,
+    };
+    let mut best = BestSolution {
+        len: usize::MAX,
+        qe: usize::MAX,
+    };
+    let initial_state = CurrentState {
+        sum: 0,
+        qe: 1,
+        len: 0,
+    };
 
-    let ret = solutions
-        .iter()
-        .map(|x| x.iter().product::<usize>())
-        .min()
-        .unwrap();
+    find_best_group(0, initial_state, &config, &mut best);
 
-    format_result!(ret)
+    format_result!(best.qe)
 }
