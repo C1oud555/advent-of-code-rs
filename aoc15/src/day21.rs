@@ -8,23 +8,13 @@ struct Player {
     hit_point: isize,
     damage: isize,
     armor: isize,
-    cost: isize,
 }
 
 const BOSS: Player = Player {
     hit_point: 103,
     damage: 9,
     armor: 2,
-    cost: 0,
 };
-
-impl Player {
-    fn add_equipment(&mut self, equip: (isize, isize, isize)) {
-        self.cost += equip.0;
-        self.damage += equip.1;
-        self.armor += equip.2;
-    }
-}
 
 const WEAPONS: [(isize, isize, isize); 5] =
     [(8, 4, 0), (10, 5, 0), (25, 6, 0), (40, 7, 0), (74, 8, 0)];
@@ -39,106 +29,79 @@ const RINGS: [(isize, isize, isize); 6] = [
     (80, 0, 3),
 ];
 
-fn get_all_players() -> Vec<Player> {
-    let init = Player {
-        hit_point: 100,
-        damage: 0,
-        armor: 0,
-        cost: 0,
-    };
-    let mut ret = Vec::new();
-    let weapon_armor_intersect = |player: &Player| -> Vec<Player> {
-        let mut tmp = Vec::new();
-        for weapon in WEAPONS {
-            let mut tmp_player = player.clone();
-            tmp_player.add_equipment(weapon);
-            tmp.push(tmp_player);
-        }
-        for weapon in WEAPONS {
-            for armor in ARMORS {
-                let mut tmp_player = player.clone();
-                tmp_player.add_equipment(weapon);
-                tmp_player.add_equipment(armor);
-                tmp.push(tmp_player);
-            }
-        }
-        tmp
-    };
-    // 0 rings
-    let inittmp = init.clone();
-    ret.extend(weapon_armor_intersect(&inittmp));
-    // 1 rings
-    for ring in RINGS {
-        let mut inittmp = init.clone();
-        inittmp.add_equipment(ring);
-        ret.extend(weapon_armor_intersect(&inittmp));
-    }
-    // 2 rings
-    for ring0 in RINGS {
-        for ring1 in RINGS {
-            if ring0 != ring1 {
-                let mut inittmp = init.clone();
-                inittmp.add_equipment(ring0);
-                inittmp.add_equipment(ring1);
-                ret.extend(weapon_armor_intersect(&inittmp));
+fn get_all_setups() -> Vec<(isize, isize, isize)> {
+    let mut setups = Vec::new();
+
+    // Ring combinations
+    let no_ring = std::iter::once((0, 0, 0));
+    let one_ring = RINGS.iter().cloned();
+    let two_rings = (0..RINGS.len()).flat_map(|i| {
+        ((i + 1)..RINGS.len()).map(move |j| {
+            (
+                RINGS[i].0 + RINGS[j].0,
+                RINGS[i].1 + RINGS[j].1,
+                RINGS[i].2 + RINGS[j].2,
+            )
+        })
+    });
+    let all_ring_combos: Vec<_> = no_ring.chain(one_ring).chain(two_rings).collect();
+
+    // Armor combinations (including no armor)
+    let all_armor_combos: Vec<_> = ARMORS
+        .iter()
+        .cloned()
+        .chain(std::iter::once((0, 0, 0)))
+        .collect();
+
+    for &weapon in &WEAPONS {
+        for &armor in &all_armor_combos {
+            for &ring_combo in &all_ring_combos {
+                setups.push((
+                    weapon.0 + armor.0 + ring_combo.0,
+                    weapon.1 + armor.1 + ring_combo.1,
+                    weapon.2 + armor.2 + ring_combo.2,
+                ));
             }
         }
     }
-    ret
+    setups
 }
 
-fn fight(player: &Player) -> Option<isize> {
-    let mut player = player.clone();
-    let mut boss = BOSS.clone();
-    loop {
-        boss.hit_point -= (player.damage - boss.armor).max(1);
-        if boss.hit_point <= 0 {
-            return Some(player.cost);
-        }
-        player.hit_point -= (boss.damage - player.armor).max(1);
-        if player.hit_point <= 0 {
-            return None;
-        }
-    }
+fn does_player_win(player_damage: isize, player_armor: isize) -> bool {
+    let player_hp = 100;
+    let boss_hp = BOSS.hit_point;
+    let boss_damage = BOSS.damage;
+    let boss_armor = BOSS.armor;
+
+    let player_attack = (player_damage - boss_armor).max(1);
+    let boss_attack = (boss_damage - player_armor).max(1);
+
+    let turns_to_win = (boss_hp + player_attack - 1) / player_attack;
+    let turns_to_lose = (player_hp + boss_attack - 1) / boss_attack;
+
+    turns_to_win <= turns_to_lose
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let ret = get_all_players()
-        .iter()
-        .map(|p| fight(p).unwrap_or(10000))
+    let min_cost_to_win = get_all_setups()
+        .into_iter()
+        .filter(|&(_, damage, armor)| does_player_win(damage, armor))
+        .map(|(cost, _, _)| cost)
         .min()
-        .unwrap_or(-1);
+        .unwrap_or(0);
 
-    format_result!(ret)
-}
-
-fn fight1(player: &Player) -> Option<isize> {
-    let mut player = player.clone();
-    let mut boss = BOSS.clone();
-    loop {
-        boss.hit_point -= (player.damage - boss.armor).max(1);
-        if boss.hit_point <= 0 {
-            return None;
-        }
-        player.hit_point -= (boss.damage - player.armor).max(1);
-        if player.hit_point <= 0 {
-            println!(
-                "boss win with cost: {} damage: {} armor: {}",
-                player.cost, player.damage, player.armor
-            );
-            return Some(player.cost);
-        }
-    }
+    format_result!(min_cost_to_win)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let ret = get_all_players()
-        .iter()
-        .map(|p| fight1(p).unwrap_or(-1))
+    let max_cost_to_lose = get_all_setups()
+        .into_iter()
+        .filter(|&(_, damage, armor)| !does_player_win(damage, armor))
+        .map(|(cost, _, _)| cost)
         .max()
-        .unwrap_or(-1);
+        .unwrap_or(0);
 
-    format_result!(ret)
+    format_result!(max_cost_to_lose)
 }
