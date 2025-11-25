@@ -1,9 +1,9 @@
-use core::panic;
-
 use crate::PUZZLES;
 use crate::format_result;
 
 use linkme::distributed_slice;
+
+use std::str::FromStr;
 
 enum Inst {
     Hlf(u8),
@@ -14,13 +14,60 @@ enum Inst {
     Jio(u8, isize),
 }
 
+impl FromStr for Inst {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split_whitespace().collect();
+        let op = parts.first().ok_or("Missing operation")?;
+
+        let parse_reg = |r_str: &str| -> Result<u8, String> {
+            match r_str.trim_end_matches(',') {
+                "a" => Ok(0),
+                "b" => Ok(1),
+                _ => Err(format!("Invalid register: {}", r_str)),
+            }
+        };
+
+        let parse_offset = |o_str: &str| -> Result<isize, String> {
+            o_str.parse().map_err(|e| format!("Invalid offset: {}", e))
+        };
+
+        match *op {
+            "hlf" => Ok(Inst::Hlf(parse_reg(
+                parts.get(1).ok_or("Missing register")?,
+            )?)),
+            "tpl" => Ok(Inst::Tpl(parse_reg(
+                parts.get(1).ok_or("Missing register")?,
+            )?)),
+            "inc" => Ok(Inst::Inc(parse_reg(
+                parts.get(1).ok_or("Missing register")?,
+            )?)),
+            "jmp" => Ok(Inst::Jmp(parse_offset(
+                parts.get(1).ok_or("Missing offset")?,
+            )?)),
+            "jie" => {
+                let reg = parse_reg(parts.get(1).ok_or("Missing register")?)?;
+                let offset = parse_offset(parts.get(2).ok_or("Missing offset")?)?;
+                Ok(Inst::Jie(reg, offset))
+            }
+            "jio" => {
+                let reg = parse_reg(parts.get(1).ok_or("Missing register")?)?;
+                let offset = parse_offset(parts.get(2).ok_or("Missing offset")?)?;
+                Ok(Inst::Jio(reg, offset))
+            }
+            _ => Err(format!("Unknown instruction: {}", op)),
+        }
+    }
+}
+
 struct Cpu {
     regs: [usize; 2],
     pc: isize,
 }
 
 impl Cpu {
-    fn execute(&mut self, insts: Vec<Inst>) {
+    fn execute(&mut self, insts: &[Inst]) {
         while (self.pc as usize) < insts.len() {
             let inst = &insts[self.pc as usize];
             match inst {
@@ -58,68 +105,28 @@ impl Cpu {
 
 const INPUT: &str = include_str!("../inputs/day23.txt");
 
-fn str_reg_num(i: &str) -> u8 {
-    if i.starts_with("a") {
-        0
-    } else if i.starts_with("b") {
-        1
-    } else {
-        panic!("not valid reg")
-    }
-}
-
-fn parse_inst(line: &str) -> Inst {
-    let inst: Vec<&str> = line.split_whitespace().collect();
-    if inst.len() == 2 {
-        match inst[0] {
-            "hlf" => Inst::Hlf(str_reg_num(inst[1])),
-            "tpl" => Inst::Tpl(str_reg_num(inst[1])),
-            "inc" => Inst::Inc(str_reg_num(inst[1])),
-            "jmp" => Inst::Jmp(inst[1].parse::<isize>().expect("not valid jump")),
-            _ => panic!("invalid instruction"),
-        }
-    } else if inst.len() == 3 {
-        match inst[0] {
-            "jie" => Inst::Jie(str_reg_num(inst[1]), inst[2].parse::<isize>().unwrap()),
-            "jio" => Inst::Jio(str_reg_num(inst[1]), inst[2].parse::<isize>().unwrap()),
-            _ => panic!("invalid instruction"),
-        }
-    } else {
-        panic!("not valid len");
-    }
-}
-
 fn parse_input() -> Vec<Inst> {
-    let mut ret = Vec::new();
-    for line in INPUT.lines() {
-        ret.push(parse_inst(line));
-    }
+    INPUT.lines().map(|line| line.parse().unwrap()).collect()
+}
 
-    ret
+fn run_program(initial_a: usize) -> usize {
+    let insts = parse_input();
+    let mut cpu = Cpu {
+        regs: [initial_a, 0],
+        pc: 0,
+    };
+    cpu.execute(&insts);
+    cpu.regs[1]
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let insts = parse_input();
-    let mut cpu = Cpu {
-        regs: [0, 0],
-        pc: 0,
-    };
-    cpu.execute(insts);
-    let ret = cpu.regs[1];
-
+    let ret = run_program(0);
     format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let insts = parse_input();
-    let mut cpu = Cpu {
-        regs: [1, 0],
-        pc: 0,
-    };
-    cpu.execute(insts);
-    let ret = cpu.regs[1];
-
+    let ret = run_program(1);
     format_result!(ret)
 }
