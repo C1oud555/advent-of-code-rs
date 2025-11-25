@@ -27,14 +27,11 @@ fn solve0(
         }
 
         if choice > target {
-            return;
+            continue;
         }
-        // println!("selected: {:?}", selected);
-        // println!("target: {}", target);
         let mut tmp = selected.to_owned();
         tmp.push(choice);
         if choice == target {
-            println!("found one solution: {:?}", tmp);
             solutions.push(tmp);
         } else {
             solve0(i + 1, choices, target - choice, &tmp, solutions);
@@ -50,23 +47,38 @@ pub fn puzzle0() -> String {
     let i_sum: usize = input.iter().sum();
     let target = i_sum / 3;
 
-    println!("target: {target}");
     let mut solutions = vec![];
     solve0(0, &input, target, &[], &mut solutions);
     let min_len = solutions.iter().map(|x| x.len()).min().unwrap();
     solutions.retain(|x| x.len() == min_len);
-    solutions.sort_by(|l, r| {
-        l.iter()
-            .product::<usize>()
-            .cmp(&r.iter().product::<usize>())
-    });
 
-    let ret = solutions[0].iter().product::<usize>();
+    let ret = solutions
+        .iter()
+        .map(|x| x.iter().product::<usize>())
+        .min()
+        .unwrap();
 
     format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!("template 1")
+    let mut input = parse_input();
+    input.sort();
+    input.reverse();
+    let i_sum: usize = input.iter().sum();
+    let target = i_sum / 4;
+
+    let mut solutions = vec![];
+    solve0(0, &input, target, &[], &mut solutions);
+    let min_len = solutions.iter().map(|x| x.len()).min().unwrap();
+    solutions.retain(|x| x.len() == min_len);
+
+    let ret = solutions
+        .iter()
+        .map(|x| x.iter().product::<usize>())
+        .min()
+        .unwrap();
+
+    format_result!(ret)
 }
