@@ -56,7 +56,7 @@ fn parse_line(line: &str) -> (Range, Range) {
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn part1() -> String {
+pub fn puzzle0() -> String {
     let count = INPUT
         .lines()
         .filter(|line| {
@@ -69,7 +69,7 @@ pub fn part1() -> String {
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn part2() -> String {
+pub fn puzzle1() -> String {
     let count = INPUT
         .lines()
         .filter(|line| {
