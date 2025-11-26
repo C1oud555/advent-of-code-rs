@@ -1,78 +1,82 @@
-use std::collections::VecDeque;
-
 use crate::{PUZZLES, format_result};
 use linkme::distributed_slice;
 
 const INPUT: &str = include_str!("../inputs/day5.txt");
 
 struct Move {
-    cnt: u32,
-    from: u32,
-    to: u32,
+    count: usize,
+    from: usize,
+    to: usize,
 }
 
-fn parse_input() -> (Vec<VecDeque<char>>, Vec<Move>) {
-    let mut init_state: Vec<VecDeque<char>> = Vec::new();
-    let mut moves = Vec::new();
+/// The two crane models move crates differently.
+enum CraneModel {
+    CrateMover9000, // Moves one by one, reversing order
+    CrateMover9001, // Moves as a single block, preserving order
+}
 
-    for line in INPUT.lines() {
-        if line.starts_with("[") {
-            for (index, bbs) in line.as_bytes().chunks(4).enumerate() {
-                if bbs[1] != b' ' {
-                    while init_state.get(index).is_none() {
-                        init_state.push(VecDeque::new());
-                    }
-                    init_state[index].push_front(bbs[1] as char);
-                }
+/// Parses the entire input into an initial stack configuration and a list of moves.
+fn parse_input() -> (Vec<Vec<char>>, Vec<Move>) {
+    let (drawing, moves_str) = INPUT.split_once("\n\n").unwrap();
+
+    // Parse the initial stacks configuration
+    let mut drawing_lines = drawing.lines().rev();
+    let num_line = drawing_lines.next().unwrap();
+    let num_stacks = num_line.split_whitespace().count();
+    let mut stacks = vec![Vec::new(); num_stacks];
+
+    for line in drawing_lines {
+        let chars: Vec<char> = line.chars().collect();
+        for (i, stack) in stacks.iter_mut().enumerate() {
+            let char_index = 1 + i * 4;
+            if let Some(&c) = chars.get(char_index)
+                && c.is_ascii_alphabetic()
+            {
+                stack.push(c);
             }
-        } else if line.starts_with("move") {
-            let mut comps = line.split_whitespace();
-            let _ = comps.next();
-            let cnt = comps.next().unwrap().parse::<u32>().unwrap();
-            let _ = comps.next();
-            let from = comps.next().unwrap().parse::<u32>().unwrap() - 1;
-            let _ = comps.next();
-            let to = comps.next().unwrap().parse::<u32>().unwrap() - 1;
-            moves.push(Move { cnt, from, to })
         }
     }
 
-    (init_state, moves)
+    // Parse the move instructions
+    let moves = moves_str
+        .lines()
+        .map(|line| {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            Move {
+                count: parts[1].parse().unwrap(),
+                from: parts[3].parse::<usize>().unwrap() - 1, // 1-indexed to 0-indexed
+                to: parts[5].parse::<usize>().unwrap() - 1,   // 1-indexed to 0-indexed
+            }
+        })
+        .collect();
+
+    (stacks, moves)
+}
+
+fn solve(crane_model: CraneModel) -> String {
+    let (mut stacks, moves) = parse_input();
+
+    for m in &moves {
+        let from_stack = &mut stacks[m.from];
+        let drain_start = from_stack.len() - m.count;
+        let mut drained_crates: Vec<char> = from_stack.drain(drain_start..).collect();
+
+        if matches!(crane_model, CraneModel::CrateMover9000) {
+            drained_crates.reverse();
+        }
+
+        stacks[m.to].extend(drained_crates);
+    }
+
+    stacks.iter().map(|s| s.last().unwrap_or(&' ')).collect()
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn puzzle0() -> String {
-    let (mut stacks, moves) = parse_input();
-    for stack in &stacks {
-        println!("{:?}", stack);
-    }
-    for mmove in &moves {
-        for _ in 0..mmove.cnt {
-            let tmp = stacks[mmove.from as usize].pop_back().unwrap();
-            stacks[mmove.to as usize].push_back(tmp);
-        }
-    }
-    let ret: String = stacks.iter_mut().map(|x| x.pop_back().unwrap()).collect();
-    format_result!(ret)
+pub fn part1() -> String {
+    format_result!(solve(CraneModel::CrateMover9000))
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn puzzle1() -> String {
-    let (mut stacks, moves) = parse_input();
-    for stack in &stacks {
-        println!("{:?}", stack);
-    }
-    for mmove in &moves {
-        let mut tmp_vec = Vec::new();
-        for _ in 0..mmove.cnt {
-            let tmp = stacks[mmove.from as usize].pop_back().unwrap();
-            tmp_vec.push(tmp);
-        }
-        tmp_vec.reverse();
-        for cc in tmp_vec {
-            stacks[mmove.to as usize].push_back(cc);
-        }
-    }
-    let ret: String = stacks.iter_mut().map(|x| x.pop_back().unwrap()).collect();
-    format_result!(ret)
+pub fn part2() -> String {
+    format_result!(solve(CraneModel::CrateMover9001))
 }
