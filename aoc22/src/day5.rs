@@ -72,11 +72,11 @@ fn solve(crane_model: CraneModel) -> String {
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn part1() -> String {
+pub fn puzzle0() -> String {
     format_result!(solve(CraneModel::CrateMover9000))
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn part2() -> String {
+pub fn puzzle1() -> String {
     format_result!(solve(CraneModel::CrateMover9001))
 }
