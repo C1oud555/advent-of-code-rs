@@ -1,4 +1,5 @@
 mod day1;
+mod day2;
 
 use linkme::distributed_slice;
 
