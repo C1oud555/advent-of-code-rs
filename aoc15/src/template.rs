@@ -8,10 +8,10 @@ const INPUT: &str = include_str!("../inputs/day1.txt");
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
     let _ = INPUT;
-    format_result!("template 0")
+    format_result!("t 0")
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    format_result!("template 1")
+    format_result!("t 1")
 }
