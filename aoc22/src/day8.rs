@@ -3,116 +3,139 @@ use linkme::distributed_slice;
 
 const INPUT: &str = include_str!("../inputs/day8.txt");
 
-fn parse_input() -> Vec<Vec<u8>> {
-    let board_len = INPUT.lines().count();
-    let mut ret = vec![vec![0; board_len]; board_len];
-    for (i, line) in INPUT.lines().enumerate() {
-        for (j, byte) in line.bytes().enumerate() {
-            ret[i][j] = byte;
-        }
-    }
-
-    ret
+/// Parses the input string into a grid of numbers (u8).
+/// This is more idiomatic and efficient than the original implementation.
+fn parse_grid(input: &str) -> Vec<Vec<u8>> {
+    input
+        .lines()
+        .map(|line| line.bytes().map(|b| b - b'0').collect())
+        .collect()
 }
 
-fn check_visible(board: &[Vec<u8>], row: usize, col: usize) -> bool {
-    let board_len = board.len();
-    let value = board[row][col];
-    let mut ret = [true; 4];
-    (0..row).for_each(|ridx| {
-        ret[0] = (board[ridx][col] < value) && ret[0];
-    });
-    (row + 1..board_len).for_each(|ridx| {
-        ret[1] = (board[ridx][col] < value) && ret[1];
-    });
-    (0..col).for_each(|cidx| {
-        ret[2] = (board[row][cidx] < value) && ret[2];
-    });
-    (col + 1..board_len).for_each(|cidx| {
-        ret[3] = (board[row][cidx] < value) && ret[3];
-    });
-    ret.iter().any(|x| *x)
+/// --- Part 1: Visible Trees ---
+/// Calculates the number of trees visible from outside the grid.
+///
+/// # Algorithm
+/// This implementation is much more efficient than the original O(N^3) approach.
+/// It uses an O(N^2) algorithm by creating a boolean `visible` grid.
+///
+/// 1. Initialize a `visible` grid of the same dimensions as the tree grid, with all values set to `false`.
+/// 2. Perform four sweeps across the grid:
+///    - From left to right (for each row)
+///    - From right to left (for each row)
+///    - From top to bottom (for each column)
+///    - From bottom to top (for each column)
+/// 3. In each sweep, keep track of the maximum height seen so far. Any tree taller than the max height
+///    is visible from that direction, so we mark its position as `true` in the `visible` grid.
+/// 4. Finally, count the number of `true` values in the `visible` grid.
+fn part1(grid: &[Vec<u8>]) -> usize {
+    let (height, width) = (grid.len(), grid[0].len());
+    let mut visible = vec![vec![false; width]; height];
+
+    // Left-to-right sweep
+    for r in 0..height {
+        let mut max_h = -1;
+        for c in 0..width {
+            let tree_h = grid[r][c] as i8;
+            if tree_h > max_h {
+                visible[r][c] = true;
+                max_h = tree_h;
+            }
+        }
+    }
+
+    // Right-to-left sweep
+    for r in 0..height {
+        let mut max_h = -1;
+        for c in (0..width).rev() {
+            let tree_h = grid[r][c] as i8;
+            if tree_h > max_h {
+                visible[r][c] = true;
+                max_h = tree_h;
+            }
+        }
+    }
+
+    // Top-to-bottom sweep
+    for c in 0..width {
+        let mut max_h = -1;
+        for r in 0..height {
+            let tree_h = grid[r][c] as i8;
+            if tree_h > max_h {
+                visible[r][c] = true;
+                max_h = tree_h;
+            }
+        }
+    }
+
+    // Bottom-to-top sweep
+    for c in 0..width {
+        let mut max_h = -1;
+        for r in (0..height).rev() {
+            let tree_h = grid[r][c] as i8;
+            if tree_h > max_h {
+                visible[r][c] = true;
+                max_h = tree_h;
+            }
+        }
+    }
+
+    visible.iter().flatten().filter(|&&v| v).count()
 }
 
-fn scenic_score(board: &[Vec<u8>], row: usize, col: usize) -> u32 {
-    let board_len = board.len();
+/// --- Part 2: Scenic Score ---
+/// Calculates the scenic score for a single tree.
+/// This version is safer and more idiomatic than the original, using iterators.
+fn scenic_score(grid: &[Vec<u8>], r: usize, c: usize) -> usize {
+    let our_height = grid[r][c];
+    let (height, width) = (grid.len(), grid[0].len());
 
-    if row == 0 || row == board_len - 1 || col == 0 || col == board_len - 1 {
-        return 0;
-    }
+    // Look up
+    let score_up = (0..r)
+        .rev()
+        .position(|row| grid[row][c] >= our_height)
+        .map_or(r, |p| p + 1);
 
-    let value = board[row][col];
-    let mut ret = [0; 4];
-    let mut ridx = row - 1;
-    while ridx < board_len {
-        if board[ridx][col] < value {
-            ret[0] += 1;
-            ridx -= 1;
-        } else if board[ridx][col] == value {
-            ret[0] += 1;
-            break;
-        } else {
-            break;
-        }
-    }
-    let mut ridx = row + 1;
-    while ridx < board_len {
-        if board[ridx][col] < value {
-            ret[1] += 1;
-            ridx += 1;
-        } else {
-            ret[1] += 1;
-            break;
-        }
-    }
+    // Look down
+    let score_down = (r + 1..height)
+        .position(|row| grid[row][c] >= our_height)
+        .map_or(height - r - 1, |p| p + 1);
 
-    let mut cidx = col - 1;
-    while cidx < board_len {
-        if board[row][cidx] < value {
-            ret[2] += 1;
-            cidx -= 1;
-        } else {
-            ret[2] += 1;
-            break;
+    // Look left
+    let score_left = (0..c)
+        .rev()
+        .position(|col| grid[r][col] >= our_height)
+        .map_or(c, |p| p + 1);
+
+    // Look right
+    let score_right = (c + 1..width)
+        .position(|col| grid[r][col] >= our_height)
+        .map_or(width - c - 1, |p| p + 1);
+
+    score_up * score_down * score_left * score_right
+}
+
+/// Calculates the highest scenic score in the grid.
+fn part2(grid: &[Vec<u8>]) -> usize {
+    let (height, width) = (grid.len(), grid[0].len());
+    let mut max_score = 0;
+
+    for r in 0..height {
+        for c in 0..width {
+            max_score = max_score.max(scenic_score(grid, r, c));
         }
     }
-    let mut cidx = col + 1;
-    while cidx < board_len {
-        if board[row][cidx] < value {
-            ret[3] += 1;
-            cidx += 1;
-        } else {
-            ret[3] += 1;
-            break;
-        }
-    }
-    println!("iter: {:?}", ret);
-    ret.iter().product()
+    max_score
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    let board = parse_input();
-    let mut ret = 0;
-    for (ridx, row) in board.iter().enumerate() {
-        for (cidx, _col) in row.iter().enumerate() {
-            if check_visible(&board, ridx, cidx) {
-                ret += 1;
-            }
-        }
-    }
-    format_result!(ret)
+    let grid = parse_grid(INPUT);
+    format_result!(part1(&grid))
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    let board = parse_input();
-    let mut ret = 0;
-    for (ridx, row) in board.iter().enumerate() {
-        for (cidx, _col) in row.iter().enumerate() {
-            let score = scenic_score(&board, ridx, cidx);
-            ret = ret.max(score);
-        }
-    }
-    format_result!(ret)
+    let grid = parse_grid(INPUT);
+    format_result!(part2(&grid))
 }
