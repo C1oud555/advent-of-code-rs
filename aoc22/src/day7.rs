@@ -79,14 +79,14 @@ fn get_all_directory_sizes() -> Vec<u32> {
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn part1() -> String {
+pub fn puzzle0() -> String {
     let all_sizes = get_all_directory_sizes();
     let sum: u32 = all_sizes.iter().filter(|&&s| s <= PART1_MAX_SIZE).sum();
     format_result!(sum)
 }
 
 #[distributed_slice(PUZZLES)]
-pub fn part2() -> String {
+pub fn puzzle1() -> String {
     let all_sizes = get_all_directory_sizes();
     let used_space = all_sizes[0]; // Root directory size is the total used space
     let free_space = TOTAL_DISK_SPACE - used_space;
