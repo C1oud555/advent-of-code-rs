@@ -24,7 +24,6 @@ fn solve(input: &str, th: i32, display: bool) -> i32 {
             let (_, tmp) = line.split_once(' ').unwrap();
             let ladden = tmp.parse::<i32>().unwrap();
             if (cycle + 1 - 20) % 40 == 0 {
-                println!("cycle {} add ({} * {})", cycle + 1, cycle + 1, regx);
                 sum += (cycle + 1) * regx;
             }
             let (sx, sy): (i32, i32) = ((cycle + 1) / 40, (cycle + 1) % 40);
@@ -37,7 +36,6 @@ fn solve(input: &str, th: i32, display: bool) -> i32 {
         }
 
         if (cycle - 20) % 40 == 0 {
-            println!("cycle {} add ({} * {}) normal", cycle, cycle, regx);
             sum += cycle * regx;
         }
 
