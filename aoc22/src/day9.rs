@@ -5,7 +5,7 @@ use linkme::distributed_slice;
 
 const INPUT: &str = include_str!("../inputs/day9.txt");
 
-fn solve(input: &str, rope_length: usize) -> String {
+fn solve(input: &str, rope_length: usize) -> usize {
     let mut knots = vec![(0, 0); rope_length];
     let mut visited = HashSet::from([(0, 0)]);
 
@@ -40,15 +40,17 @@ fn solve(input: &str, rope_length: usize) -> String {
             visited.insert(*knots.last().unwrap());
         }
     }
-    format_result!(visited.len())
+    visited.len()
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle0() -> String {
-    solve(INPUT, 2)
+    let ret = solve(INPUT, 2);
+    format_result!(ret)
 }
 
 #[distributed_slice(PUZZLES)]
 pub fn puzzle1() -> String {
-    solve(INPUT, 10)
+    let ret = solve(INPUT, 10);
+    format_result!(ret)
 }
