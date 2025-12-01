@@ -13,11 +13,11 @@ fn read_input_to_lines() -> List(String) {
   }
 }
 
-fn parse_line(line: String) -> #(String, Int) {
+pub fn parse_line(line: String) -> Result(#(String, Int), Nil) {
   case line {
-    "L" <> num -> #("L", int.parse(num) |> result.unwrap(-10))
-    "R" <> num -> #("R", int.parse(num) |> result.unwrap(-10))
-    _ -> #("T", 0)
+    "L" <> num -> int.parse(num) |> result.map(fn(n) { #("L", n) })
+    "R" <> num -> int.parse(num) |> result.map(fn(n) { #("R", n) })
+    _ -> Error(Nil)
   }
 }
 
@@ -25,9 +25,10 @@ pub fn puzzle0() -> Nil {
   let input = read_input_to_lines()
   let #(_, zero_cnt) =
     input
-    |> list.fold(#(50, 0), fn(acc, line) {
+    |> list.filter_map(parse_line)
+    |> list.fold(#(50, 0), fn(acc, parsed) {
       let #(st, zcnt) = acc
-      let #(direction, num) = parse_line(line)
+      let #(direction, num) = parsed
       let nst = case direction {
         "L" -> { st + 100 - num } % 100
         "R" -> { st + 100 + num } % 100
@@ -45,34 +46,75 @@ pub fn puzzle0() -> Nil {
   io.println("aco25::puzzle0 " <> zero_cnt |> int.to_string)
 }
 
-pub fn rotate(st: Int, zcnt: Int, num: Int, direction: String) -> #(Int, Int) {
-  case num {
-    0 -> #(st, zcnt)
-    _ -> {
-      let nst = case direction {
-        "L" -> { st + 100 - 1 } % 100
-        "R" -> { st + 100 + 1 } % 100
-        _ -> st
+pub fn calculate_zero_landings(st: Int, num: Int, direction: String) -> Int {
+  let initial_steps = num
+  let current_st = st
+
+  case direction {
+    "R" -> {
+      let steps_to_first_zero = case current_st {
+        0 -> 100
+        _ -> 100 - current_st
       }
-      let nzcnt =
-        zcnt
-        + case nst {
-          0 -> 1
-          _ -> 0
+
+      case initial_steps >= steps_to_first_zero {
+        True -> {
+          let new_landings = 1
+          let remaining_steps = initial_steps - steps_to_first_zero
+          new_landings + remaining_steps / 100
         }
-      rotate(nst, nzcnt, num - 1, direction)
+        False -> 0
+      }
     }
+    "L" -> {
+      let steps_to_first_zero = case current_st {
+        0 -> 100
+        _ -> current_st
+      }
+
+      case initial_steps >= steps_to_first_zero {
+        True -> {
+          let new_landings = 1
+          let remaining_steps = initial_steps - steps_to_first_zero
+          new_landings + remaining_steps / 100
+        }
+        False -> 0
+      }
+    }
+    _ -> 0
   }
+}
+
+pub fn calculate_next_state_and_zeros(
+  current_st: Int,
+  total_num_steps: Int,
+  direction: String,
+) -> #(Int, Int) {
+  let num_mod = total_num_steps % 100
+  let new_st = case direction {
+    "L" -> { current_st - num_mod + 100 } % 100
+    "R" -> { current_st + num_mod } % 100
+    _ -> current_st
+    // Should not happen with valid input
+  }
+
+  let zero_landings =
+    calculate_zero_landings(current_st, total_num_steps, direction)
+
+  #(new_st, zero_landings)
 }
 
 pub fn puzzle1() -> Nil {
   let input = read_input_to_lines()
   let #(_, zero_cnt) =
     input
-    |> list.fold(#(50, 0), fn(acc, line) {
+    |> list.filter_map(parse_line)
+    |> list.fold(#(50, 0), fn(acc, parsed) {
       let #(st, zcnt) = acc
-      let #(direction, num) = parse_line(line)
-      rotate(st, zcnt, num, direction)
+      let #(direction, num) = parsed
+      let #(new_st, new_landings) =
+        calculate_next_state_and_zeros(st, num, direction)
+      #(new_st, zcnt + new_landings)
     })
 
   io.println("aco25::puzzle1 " <> zero_cnt |> int.to_string)
