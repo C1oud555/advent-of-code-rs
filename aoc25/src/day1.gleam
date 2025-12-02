@@ -8,7 +8,7 @@ import simplifile
 fn read_input_to_lines() -> List(String) {
   let filename = "inputs/day1.txt"
   case simplifile.read(filename) {
-    Ok(content) -> string.split(content, on: "\n")
+    Ok(content) -> content |> string.trim |> string.split(on: "\n")
     Error(_) -> []
   }
 }
@@ -43,7 +43,7 @@ pub fn puzzle0() -> Nil {
       #(nst, nzcnt)
     })
 
-  io.println("aco25::puzzle0 " <> zero_cnt |> int.to_string)
+  io.println("aco25::day1::puzzle0 " <> zero_cnt |> int.to_string)
 }
 
 pub fn calculate_zero_landings(st: Int, num: Int, direction: String) -> Int {
@@ -117,5 +117,5 @@ pub fn puzzle1() -> Nil {
       #(new_st, zcnt + new_landings)
     })
 
-  io.println("aco25::puzzle1 " <> zero_cnt |> int.to_string)
+  io.println("aco25::day1::puzzle1 " <> zero_cnt |> int.to_string)
 }
