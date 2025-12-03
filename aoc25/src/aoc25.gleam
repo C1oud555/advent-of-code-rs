@@ -3,6 +3,7 @@ import clip.{type Command}
 import clip/flag.{type Flag}
 import clip/help
 import clip/opt.{type Opt}
+import day3
 import gleam/io
 import gleam/list
 
@@ -48,7 +49,11 @@ pub fn main() {
 }
 
 fn run_test(args: Arg) {
-  let puzzles = [#(day1.puzzle0, day1.puzzle1), #(day2.puzzle0, day2.puzzle1)]
+  let puzzles = [
+    #(day1.puzzle0, day1.puzzle1),
+    #(day2.puzzle0, day2.puzzle1),
+    #(day3.puzzle0, day3.puzzle1),
+  ]
   case args.all {
     True ->
       puzzles
