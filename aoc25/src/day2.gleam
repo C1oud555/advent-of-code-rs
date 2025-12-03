@@ -63,7 +63,7 @@ pub fn puzzle0() -> Nil {
       range_sum + acc
     })
 
-  io.println("aco25::day2::puzzle0_optimized " <> int.to_string(ret))
+  io.println("aco25::day2::puzzle0" <> int.to_string(ret))
 }
 
 fn is_repeat_number(n: Int) -> Bool {
@@ -101,5 +101,5 @@ pub fn puzzle1() -> Nil {
       range_sum + acc
     })
 
-  io.println("aco25::day2::puzzle1_optimized " <> int.to_string(ret))
+  io.println("aco25::day2::puzzle1" <> int.to_string(ret))
 }
