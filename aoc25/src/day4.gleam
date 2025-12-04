@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/set
 import gleam/string
 import glearray.{type Array}
 import simplifile
@@ -108,16 +109,36 @@ fn update_board(
   value: Array(Array(String)),
   removel: List(#(Bool, Int, Int)),
 ) -> Array(Array(String)) {
-  case removel {
-    [h, ..t] -> {
-      let #(_, row, col) = h
-      let assert Ok(old_row) = glearray.get(value, row)
-      let assert Ok(new_row) = old_row |> glearray.copy_set(col, ".")
-      let assert Ok(new_val) = value |> glearray.copy_set(row, new_row)
-      update_board(new_val, t)
-    }
-    [] -> value
+  let coords_to_remove =
+    removel
+    |> list.map(fn(item) {
+      let #(_, row, col) = item
+      #(row, col)
+    })
+    |> set.from_list
+
+  let list_of_lists = glearray.to_list(value) |> list.map(glearray.to_list)
+
+  let new_list_of_lists = {
+    let row_indices = list.range(0, list.length(list_of_lists) - 1)
+    list.zip(list_of_lists, row_indices)
+    |> list.map(fn(row_tuple) {
+      let #(row_list, row_idx) = row_tuple
+      let col_indices = list.range(0, list.length(row_list) - 1)
+      list.zip(row_list, col_indices)
+      |> list.map(fn(item_tuple) {
+        let #(item, col_idx) = item_tuple
+        case set.contains(coords_to_remove, #(row_idx, col_idx)) {
+          True -> "."
+          False -> item
+        }
+      })
+    })
   }
+
+  new_list_of_lists
+  |> list.map(glearray.from_list)
+  |> glearray.from_list
 }
 
 pub fn puzzle1() -> Nil {
