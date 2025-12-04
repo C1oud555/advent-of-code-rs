@@ -32,7 +32,7 @@ pub fn puzzle0() -> Nil {
       c_num
     })
     |> list.fold(0, fn(acc, elem) { acc + elem })
-  io.println("aco25::day2::puzzle0 " <> int.to_string(ret))
+  io.println("aco25::day3::puzzle0 " <> int.to_string(ret))
 }
 
 pub fn find_largest_n(init: List(Int), rest: List(Int)) -> List(Int) {
@@ -78,5 +78,5 @@ pub fn puzzle1() -> Nil {
       c_num
     })
     |> list.fold(0, fn(acc, elem) { acc + elem })
-  io.println("aco25::day2::puzzle1 " <> int.to_string(ret))
+  io.println("aco25::day3::puzzle1 " <> int.to_string(ret))
 }
