@@ -6,6 +6,7 @@ import clip/opt.{type Opt}
 import day3
 import day4
 import day5
+import day6
 import gleam/io
 import gleam/list
 
@@ -57,6 +58,7 @@ fn run_test(args: Arg) {
     #(day3.puzzle0, day3.puzzle1),
     #(day4.puzzle0, day4.puzzle1),
     #(day5.puzzle0, day5.puzzle1),
+    #(day6.puzzle0, day6.puzzle1),
   ]
   case args.all {
     True ->
