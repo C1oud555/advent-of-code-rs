@@ -8,6 +8,7 @@ import day4
 import day5
 import day6
 import day7
+import day8
 import gleam/io
 import gleam/list
 
@@ -61,6 +62,7 @@ fn run_test(args: Arg) {
     #(day5.puzzle0, day5.puzzle1),
     #(day6.puzzle0, day6.puzzle1),
     #(day7.puzzle0, day7.puzzle1),
+    #(day8.puzzle0, day8.puzzle1),
   ]
   case args.all {
     True ->
