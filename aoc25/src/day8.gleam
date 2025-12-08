@@ -2,6 +2,7 @@ import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/string
 import simplifile
 
@@ -49,10 +50,15 @@ pub fn puzzle0() -> Nil {
       int.compare(f0, f1)
     })
 
-  let ret =
+  let input_len = distances |> list.length
+
+  let #(merged, _) =
     distances
     |> list.take(1000)
-    |> do_merge
+    |> do_merge(input_len)
+
+  let ret =
+    merged
     |> list.map(fn(item) { item |> list.length })
     |> list.sort(int.compare)
     |> list.reverse
@@ -62,10 +68,15 @@ pub fn puzzle0() -> Nil {
   io.println("aco25::day8::puzzle0 " <> int.to_string(ret))
 }
 
-fn do_merge(l: List(#(Coord, Coord, Int))) -> List(List(Coord)) {
+fn do_merge(
+  l: List(#(Coord, Coord, Int)),
+  input_len: Int,
+) -> #(List(List(Coord)), Option(Int)) {
   l
-  |> list.fold([], fn(acc, item) {
+  |> list.fold(#([], None), fn(acc, item) {
     let #(num0, num1, _) = item
+
+    let #(acc, ff) = acc
 
     let grouped_list =
       acc
@@ -74,7 +85,7 @@ fn do_merge(l: List(#(Coord, Coord, Int))) -> List(List(Coord)) {
       })
       |> dict.to_list
 
-    case grouped_list {
+    let tmp = case grouped_list {
       [#(False, not_contain), #(True, contain)] -> {
         case contain {
           [line] -> {
@@ -119,6 +130,27 @@ fn do_merge(l: List(#(Coord, Coord, Int))) -> List(List(Coord)) {
         [[num0, num1], ..acc]
       }
     }
+    case ff {
+      None ->
+        case tmp {
+          [hh] -> {
+            case hh |> list.length == input_len {
+              True -> {
+                let #(x0, _, _) = num0
+                let #(x1, _, _) = num1
+                #(tmp, Some(x0 * x1))
+              }
+              False -> {
+                #(tmp, None)
+              }
+            }
+          }
+          _ -> {
+            #(tmp, None)
+          }
+        }
+      Some(_) -> #(tmp, ff)
+    }
   })
 }
 
@@ -137,22 +169,9 @@ pub fn puzzle1() -> Nil {
       int.compare(f0, f1)
     })
 
-  let input_len = distances |> list.length()
-  list.range(1, input_len - 1)
-  |> list.map(fn(index) {
-    let #(h, l) = distances |> list.split(index)
-    let h_len = h |> do_merge |> list.length
-    let l_len = l |> do_merge |> list.length
-    case h_len == 1, l_len == 1 {
-      True, True -> {
-        echo l |> list.first()
-        echo "Found"
-      }
-      _, _ -> {
-        echo "Not Found"
-      }
-    }
-  })
-  let ret = 0
+  let input_len = input |> list.length
+
+  let assert #(_, Some(ret)) = distances |> do_merge(input_len)
+
   io.println("aco25::day8::puzzle1 " <> int.to_string(ret))
 }
