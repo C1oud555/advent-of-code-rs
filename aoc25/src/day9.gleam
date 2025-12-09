@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/dict
 import gleam/int
 import gleam/io
@@ -83,37 +84,16 @@ pub fn puzzle1() -> Nil {
   let assert Ok(#(ret, _, _)) =
     combinations
     |> list.find(fn(item) {
-      let #(_, p0, p1) = item
-      let #(x0, y0) = #(int.min(p0.0, p1.0), int.max(p0.0, p1.0))
-      let #(x1, y1) = #(int.min(p0.1, p1.1), int.max(p0.1, p1.1))
+      let #(_, #(x0, y0), #(x1, y1)) = item
+      let #(x0, x1) = #(int.min(x0, x1), int.max(x0, x1))
+      let #(y0, y1) = #(int.min(y0, y1), int.max(y0, y1))
 
-      let ps0 =
-        edge_points
-        |> list.filter(fn(t) {
-          let #(x, y) = t
-          x == x0 && y < y1 && y > y1
-        })
-      let ps1 =
-        edge_points
-        |> list.filter(fn(t) {
-          let #(x, y) = t
-          x == x1 && y < y1 && y > y1
-        })
-      let ps2 =
-        edge_points
-        |> list.filter(fn(t) {
-          let #(x, y) = t
-          y == y0 && x < x1 && x > x0
-        })
-      let ps3 =
-        edge_points
-        |> list.filter(fn(t) {
-          let #(x, y) = t
-          y == y1 && x < x1 && x > x0
-        })
-
-      [ps0, ps1, ps2, ps3]
-      |> list.all(fn(item) { { item |> list.length } != 1 })
+      edge_points
+      |> list.any(fn(p) {
+        let #(xg, yg) = p
+        { x0 < xg && xg < x1 } && { y0 < yg && yg < y1 }
+      })
+      |> bool.negate
     })
 
   io.println("aco25::day9::puzzle1 " <> int.to_string(ret))
