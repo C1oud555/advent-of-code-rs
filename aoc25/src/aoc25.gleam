@@ -3,6 +3,7 @@ import clip.{type Command}
 import clip/flag.{type Flag}
 import clip/help
 import clip/opt.{type Opt}
+import day10
 import day3
 import day4
 import day5
@@ -65,6 +66,7 @@ fn run_test(args: Arg) {
     #(day7.puzzle0, day7.puzzle1),
     #(day8.puzzle0, day8.puzzle1),
     #(day9.puzzle0, day9.puzzle1),
+    #(day10.puzzle0, day10.puzzle1),
   ]
   case args.all {
     True ->

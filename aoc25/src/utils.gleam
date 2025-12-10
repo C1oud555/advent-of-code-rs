@@ -5,6 +5,17 @@ pub fn list_sum(l: List(Int)) -> Int {
   |> list.fold(0, fn(acc, item) { acc + item })
 }
 
+pub fn list_min(l: List(Int)) -> Int {
+  let assert Ok(init) = l |> list.first
+  l
+  |> list.fold(init, fn(acc, item) {
+    case item < acc {
+      True -> item
+      False -> acc
+    }
+  })
+}
+
 pub fn list_product(l: List(Int)) -> Int {
   l
   |> list.fold(1, fn(acc, item) { acc * item })
