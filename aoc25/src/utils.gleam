@@ -19,3 +19,7 @@ pub fn index_of(l: List(a), predicate: fn(a) -> Bool) -> List(Int) {
     }
   })
 }
+
+pub type Point {
+  Point(x: Int, y: Int)
+}

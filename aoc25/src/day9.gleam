@@ -1,100 +1,109 @@
-import gleam/bool
-import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/option
 import gleam/string
 import simplifile
+import utils.{type Point, Point}
 
-fn parse_input() -> List(#(Int, Int)) {
+pub type Rectangle {
+  Rectangle(top: Int, bottom: Int, left: Int, right: Int)
+}
+
+fn rectangle_from_vertices(p: Point, q: Point) -> Rectangle {
+  let Point(x: qx, y: qy) = q
+  let Point(x: px, y: py) = p
+
+  let #(left, right) = case qx > px {
+    True -> #(px, qx)
+    False -> #(qx, px)
+  }
+  let #(bottom, top) = case qy > py {
+    True -> #(py, qy)
+    False -> #(qy, py)
+  }
+
+  Rectangle(top:, bottom:, left:, right:)
+}
+
+fn parse_input() -> List(Point) {
   let filename = "inputs/day9.txt"
   case simplifile.read(filename) {
     Ok(content) -> {
       content
-      |> string.trim
+      |> string.trim_end
       |> string.split(on: "\n")
       |> list.map(fn(line) {
-        let nums = line |> string.split(on: ",") |> list.map(int.parse)
-        let assert [Ok(num0), Ok(num1)] = nums
-        #(num0, num1)
+        let assert [Ok(num0), Ok(num1)] =
+          line |> string.split(on: ",") |> list.map(int.parse)
+        Point(num0, num1)
       })
     }
     Error(_) -> panic as "invalid input"
   }
 }
 
-fn area(pair: List(#(Int, Int))) -> #(Int, #(Int, Int), #(Int, Int)) {
-  let assert [#(a0, b0), #(a1, b1)] = pair
-  let h = { a1 - a0 } |> int.absolute_value
-  let w = { b1 - b0 } |> int.absolute_value
-  #({ h + 1 } * { w + 1 }, #(a0, b0), #(a1, b1))
+fn area(rectangle: Rectangle) {
+  { rectangle.right - rectangle.left + 1 }
+  * { rectangle.top - rectangle.bottom + 1 }
 }
 
 pub fn puzzle0() -> Nil {
   let input = parse_input()
-  let assert Ok(ret) =
+  let assert Ok(rect) =
     input
-    |> list.combinations(2)
-    |> list.map(area)
-    |> list.map(fn(item) { item.0 })
-    |> list.max(int.compare)
+    |> list.combination_pairs()
+    |> list.map(fn(pair) { rectangle_from_vertices(pair.0, pair.1) })
+    |> list.max(fn(one, other) { int.compare(area(one), area(other)) })
+
+  let ret = area(rect)
 
   io.println("aco25::day9::puzzle0 " <> int.to_string(ret))
 }
 
-fn build_range(input: List(#(Int, Int))) -> List(#(Int, Int)) {
-  let assert Ok(start) = input |> list.last
-  let #(edge_points, _) =
-    input
-    |> list.fold(#([], start), fn(acc, item) {
-      let #(points, #(x0, y0)) = acc
-      let #(x1, y1) = item
-      let new_set = case x0 == x1, y0 == y1 {
-        True, False -> {
-          list.range(y0, y1)
-          |> list.map(fn(item) { #(x0, item) })
-          |> list.append(points)
-        }
-        False, True -> {
-          list.range(x0, x1)
-          |> list.map(fn(item) { #(item, y0) })
-          |> list.append(points)
-        }
-        _, _ -> panic as "should not happend"
-      }
-      #(new_set, item)
-    })
+fn polygon_from_points(points: List(Point)) -> List(Rectangle) {
+  let assert Ok(last) = list.last(points)
+  let assert Ok(first) = list.first(points)
 
-  edge_points
+  [#(last, first), ..list.zip(points, list.drop(points, 1))]
+  |> list.map(fn(pair) { rectangle_from_vertices(pair.0, pair.1) })
+}
+
+fn intersects(rectangle: Rectangle, with other: Rectangle) -> Bool {
+  //                   ┌──────┐
+  //           r.left  └──────┘ r.right
+  //       s.left ├───────────────┤ s.right
+  //
+  //                            ┬  s.top
+  //      r.top    ┌──────┐    │
+  //      r.bottom └──────┘    │
+  //                            ┴  s.bottom
+  //
+
+  // Great explanation someone linked on Reddit!
+  // https://kishimotostudios.com/articles/aabb_collision/
+
+  // Rectangle isn't to the right of the other
+  rectangle.left < other.right
+  // Rectangle isn't to the left of the other
+  && rectangle.right > other.left
+  // Rectangle isn't above the other
+  && rectangle.bottom < other.top
+  // Rectangle isn't below the other
+  && rectangle.top > other.bottom
 }
 
 pub fn puzzle1() -> Nil {
   let input = parse_input()
 
-  let edge_points = build_range(input)
+  let polygon = polygon_from_points(input)
 
-  let combinations =
-    input
-    |> list.combinations(2)
-    |> list.map(area)
-    |> list.sort(fn(l, r) { int.compare(l.0, r.0) })
-    |> list.reverse()
+  let assert Ok(rect) =
+    list.combination_pairs(input)
+    |> list.map(fn(pair) { rectangle_from_vertices(pair.0, pair.1) })
+    |> list.sort(fn(one, other) { int.compare(area(other), area(one)) })
+    |> list.find(fn(rectange) { !list.any(polygon, intersects(_, rectange)) })
 
-  let assert Ok(#(ret, _, _)) =
-    combinations
-    |> list.find(fn(item) {
-      let #(_, #(x0, y0), #(x1, y1)) = item
-      let #(x0, x1) = #(int.min(x0, x1), int.max(x0, x1))
-      let #(y0, y1) = #(int.min(y0, y1), int.max(y0, y1))
-
-      edge_points
-      |> list.any(fn(p) {
-        let #(xg, yg) = p
-        { x0 < xg && xg < x1 } && { y0 < yg && yg < y1 }
-      })
-      |> bool.negate
-    })
+  let ret = area(rect)
 
   io.println("aco25::day9::puzzle1 " <> int.to_string(ret))
 }
